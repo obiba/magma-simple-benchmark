@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.Set;
 
 import org.obiba.magma.Datasource;
-import org.obiba.magma.MagmaEngine;
 import org.obiba.magma.ValueSet;
 import org.obiba.magma.ValueTable;
 import org.obiba.magma.Variable;
@@ -101,11 +100,6 @@ public class MongoDBDatasourceBenchmark implements DatasourceBenchmark {
       valueTable.getVariableValueSource(variable.getName()).asVectorSource().getValues(Sets.newTreeSet(entities));
     }
     benchmarkLog.info("  load vectors in {}", stopwatch);
-  }
-
-  @Override
-  public void shutdown() {
-    MagmaEngine.get().shutdown();
   }
 
 }

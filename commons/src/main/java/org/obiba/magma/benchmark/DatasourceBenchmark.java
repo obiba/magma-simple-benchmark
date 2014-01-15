@@ -26,5 +26,4 @@ public interface DatasourceBenchmark {
 
   void readVectors(ValueTable valueTable, Iterable<Variable> variables, Iterable<VariableEntity> entities);
 
-  void shutdown();
 }

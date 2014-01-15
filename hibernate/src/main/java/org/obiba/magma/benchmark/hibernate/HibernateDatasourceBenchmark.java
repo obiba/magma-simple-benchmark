@@ -183,9 +183,4 @@ public class HibernateDatasourceBenchmark implements DatasourceBenchmark {
     });
   }
 
-  @Override
-  public void shutdown() {
-    MagmaEngine.get().shutdown();
-  }
-
 }
