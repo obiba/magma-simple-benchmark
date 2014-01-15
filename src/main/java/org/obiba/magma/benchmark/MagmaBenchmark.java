@@ -37,7 +37,7 @@ public class MagmaBenchmark {
   private MagmaBenchmark() {}
 
   public static void main(String... args) throws Exception {
-    ConfigurableApplicationContext applicationContext = new ClassPathXmlApplicationContext("/context.xml");
+    ConfigurableApplicationContext applicationContext = new ClassPathXmlApplicationContext("/benchmark-context.xml");
     applicationContext.registerShutdownHook();
     applicationContext.getBean(MagmaBenchmark.class).runBenchmarks();
   }

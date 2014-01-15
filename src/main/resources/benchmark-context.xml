@@ -8,7 +8,8 @@
 
   <context:component-scan base-package="org.obiba.magma.benchmark"/>
 
-  <import resource="hibernate-context.xml"/>
+  <context:property-placeholder location="classpath:jdbc-mysql.properties"/>
 
+  <import resource="hibernate-context.xml"/>
 
 </beans>
