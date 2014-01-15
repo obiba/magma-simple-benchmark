@@ -5,35 +5,39 @@ import java.net.UnknownHostException;
 import java.util.Set;
 
 import org.hibernate.SessionFactory;
-import org.obiba.core.util.FileUtil;
+import org.obiba.magma.Datasource;
 import org.obiba.magma.MagmaEngine;
 import org.obiba.magma.ValueSet;
 import org.obiba.magma.ValueTable;
 import org.obiba.magma.Variable;
-import org.obiba.magma.datasource.fs.FsDatasource;
+import org.obiba.magma.VariableEntity;
+import org.obiba.magma.benchmark.DatasourceBenchmark;
 import org.obiba.magma.datasource.hibernate.HibernateDatasource;
 import org.obiba.magma.support.DatasourceCopier;
 import org.obiba.magma.support.Initialisables;
-import org.obiba.magma.xstream.MagmaXStreamExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Sets;
 
 import static com.google.common.collect.Iterables.size;
 
+@Component
 @SuppressWarnings("MethodOnlyUsedFromInnerClass")
-public class HibernateDatasourceBenchmark {
+public class HibernateDatasourceBenchmark implements DatasourceBenchmark {
 
   private static final Logger log = LoggerFactory.getLogger(HibernateDatasourceBenchmark.class);
 
   private static final Logger benchmarkLog = LoggerFactory.getLogger("benchmark");
 
-  private static final String DB_BENCHMARK = "magma-benchmark";
+  private static final String DATASOURCE = "hibernate-benchmark";
 
   private static final String ONYX_DATA_ZIP = "20-onyx-data.zip";
 
@@ -41,32 +45,31 @@ public class HibernateDatasourceBenchmark {
 
   private final Stopwatch stopwatch = Stopwatch.createUnstarted();
 
+  @Autowired
   private TransactionTemplate transactionTemplate;
 
+  @Autowired
   private SessionFactory sessionFactory;
 
   private HibernateDatasource datasource;
 
-  public static void main(String... args) throws Exception {
-    HibernateDatasourceBenchmark benchmark = new ClassPathXmlApplicationContext("/hibernate-context.xml")
-        .getBean(HibernateDatasourceBenchmark.class);
-    benchmark.setup();
-    benchmark.runBenchmark();
-    benchmark.shutdown();
+  @Override
+  public void setup() throws UnknownHostException {
+    dropDatasource();
+    createDatasource();
   }
 
-  private void setup() throws UnknownHostException {
-    new MagmaEngine().extend(new MagmaXStreamExtension());
-
+  private void dropDatasource() {
     transactionTemplate.execute(new TransactionCallbackWithoutResult() {
       @Override
       protected void doInTransactionWithoutResult(TransactionStatus status) {
         try {
-          HibernateDatasource ds = new HibernateDatasource(DB_BENCHMARK, sessionFactory);
+          HibernateDatasource ds = new HibernateDatasource(DATASOURCE, sessionFactory);
           Initialisables.initialise(ds);
           MagmaEngine.get().addDatasource(ds);
           ds.drop();
-          MagmaEngine.get().removeDatasource(MagmaEngine.get().getDatasource(DB_BENCHMARK));
+          MagmaEngine.get().removeDatasource(MagmaEngine.get().getDatasource(DATASOURCE));
+          datasource = null;
         } catch(Exception e) {
           log.warn("Error while cleaning datasource", e);
         }
@@ -74,79 +77,115 @@ public class HibernateDatasourceBenchmark {
     });
   }
 
-  private void runBenchmark() throws IOException {
-
-    importData();
-
-    transactionTemplate.execute(new TransactionCallbackWithoutResult() {
-      @Override
-      protected void doInTransactionWithoutResult(TransactionStatus status) {
-        Set<ValueTable> valueTables = getValueTables();
-        for(ValueTable valueTable : valueTables) {
-          Iterable<Variable> variables = getVariables(valueTable);
-          Iterable<ValueSet> valueSets = getValueSets(valueTable);
-          readAllValues(valueTable, variables, valueSets);
-        }
-      }
-    });
-  }
-
-  private Set<ValueTable> getValueTables() {
-    stopwatch.reset().start();
-    Set<ValueTable> valueTables = datasource.getValueTables();
-    benchmarkLog.info("Load {} tables in {}", valueTables.size(), stopwatch);
-    return valueTables;
-  }
-
-  private Iterable<Variable> getVariables(ValueTable valueTable) {
-    stopwatch.reset().start();
-    Iterable<Variable> variables = valueTable.getVariables();
-    benchmarkLog.info("{}: load {} variables in {}", valueTable.getName(), size(variables), stopwatch);
-    return variables;
-  }
-
-  private Iterable<ValueSet> getValueSets(ValueTable valueTable) {
-    stopwatch.reset().start();
-    Iterable<ValueSet> valueSets = valueTable.getValueSets();
-    benchmarkLog.info("{}: load {} valueSets in {}", valueTable.getName(), size(valueSets), stopwatch);
-    return valueSets;
-  }
-
-  private void readAllValues(ValueTable valueTable, Iterable<Variable> variables, Iterable<ValueSet> valueSets) {
-    stopwatch.reset().start();
-    for(Variable variable : variables) {
-      for(ValueSet valueSet : valueSets) {
-        valueTable.getValue(variable, valueSet);
-      }
-    }
-    benchmarkLog.info("{}: load values in {}", valueTable.getName(), stopwatch);
-  }
-
-  private void importData() throws IOException {
-
+  private void createDatasource() {
     transactionTemplate.execute(new TransactionCallbackRuntimeExceptions() {
       @Override
       protected void doAction(TransactionStatus status) throws Exception {
-        FsDatasource source = new FsDatasource("benchmark", FileUtil.getFileFromResource(ONYX_DATA_ZIP));
-        datasource = new HibernateDatasource(DB_BENCHMARK, sessionFactory);
-        Initialisables.initialise(datasource, source);
-
-        stopwatch.reset().start();
-        DatasourceCopier.Builder.newCopier().build().copy(source, datasource);
-        benchmarkLog.info("Import {} in {}", ONYX_DATA_ZIP, stopwatch);
+        Initialisables.initialise(datasource = new HibernateDatasource(DATASOURCE, sessionFactory));
       }
     });
   }
 
-  private void shutdown() {
+  @Override
+  public void copyDatasource(final Datasource source) throws IOException {
+    transactionTemplate.execute(new TransactionCallbackRuntimeExceptions() {
+      @Override
+      protected void doAction(TransactionStatus status) throws Exception {
+        stopwatch.reset().start();
+        DatasourceCopier.Builder.newCopier().build().copy(source, datasource);
+        benchmarkLog.info("Import in {}", stopwatch);
+      }
+    });
+  }
+
+  @Override
+  public Set<ValueTable> getValueTables() {
+    return transactionTemplate.execute(new TransactionCallback<Set<ValueTable>>() {
+      @Override
+      public Set<ValueTable> doInTransaction(TransactionStatus status) {
+        stopwatch.reset().start();
+        Set<ValueTable> valueTables = datasource.getValueTables();
+        benchmarkLog.info("Load {} tables in {}", valueTables.size(), stopwatch);
+        return valueTables;
+      }
+    });
+  }
+
+  @Override
+  public Iterable<Variable> getVariables(final ValueTable valueTable) {
+    return transactionTemplate.execute(new TransactionCallback<Iterable<Variable>>() {
+      @Override
+      public Iterable<Variable> doInTransaction(TransactionStatus status) {
+        stopwatch.reset().start();
+        Iterable<Variable> variables = valueTable.getVariables();
+        benchmarkLog.info("  load {} variables in {}", size(variables), stopwatch);
+        return variables;
+      }
+    });
+  }
+
+  @Override
+  public Iterable<ValueSet> getValueSets(final ValueTable valueTable) {
+    return transactionTemplate.execute(new TransactionCallback<Iterable<ValueSet>>() {
+      @Override
+      public Iterable<ValueSet> doInTransaction(TransactionStatus status) {
+        stopwatch.reset().start();
+        Iterable<ValueSet> valueSets = valueTable.getValueSets();
+        benchmarkLog.info("  load {} valueSets in {}", size(valueSets), stopwatch);
+        return valueSets;
+      }
+    });
+  }
+
+  @Override
+  public Set<VariableEntity> getEntities(final ValueTable valueTable) {
+    return transactionTemplate.execute(new TransactionCallback<Set<VariableEntity>>() {
+      @Override
+      public Set<VariableEntity> doInTransaction(TransactionStatus status) {
+        stopwatch.reset().start();
+        Set<VariableEntity> entities = valueTable.getVariableEntities();
+        benchmarkLog.info("  load {} entities in {}", size(entities), stopwatch);
+        return entities;
+      }
+    });
+  }
+
+  @SuppressWarnings("ConstantConditions")
+  @Override
+  public void readVectors(final ValueTable valueTable, final Iterable<Variable> variables,
+      final Iterable<VariableEntity> entities) {
+    transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+      @Override
+      protected void doInTransactionWithoutResult(TransactionStatus status) {
+        stopwatch.reset().start();
+        for(Variable variable : variables) {
+          valueTable.getVariableValueSource(variable.getName()).asVectorSource().getValues(Sets.newTreeSet(entities));
+        }
+        benchmarkLog.info("  load vectors in {}", stopwatch);
+      }
+    });
+  }
+
+  @Override
+  public void readValues(final ValueTable valueTable, final Iterable<Variable> variables,
+      final Iterable<ValueSet> valueSets) {
+    transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+      @Override
+      protected void doInTransactionWithoutResult(TransactionStatus status) {
+        stopwatch.reset().start();
+        for(Variable variable : variables) {
+          for(ValueSet valueSet : valueSets) {
+            valueTable.getValue(variable, valueSet);
+          }
+        }
+        benchmarkLog.info("  load values in {}", stopwatch);
+      }
+    });
+  }
+
+  @Override
+  public void shutdown() {
     MagmaEngine.get().shutdown();
   }
 
-  public void setTransactionTemplate(TransactionTemplate transactionTemplate) {
-    this.transactionTemplate = transactionTemplate;
-  }
-
-  public void setSessionFactory(SessionFactory sessionFactory) {
-    this.sessionFactory = sessionFactory;
-  }
 }

@@ -1,7 +1,8 @@
 description = 'Magma Hibernate Datasource Benchmark'
 
 dependencies {
-  compile('org.springframework:spring-orm:3.2.5.RELEASE')
+    compile project(':commons')
+    compile('org.springframework:spring-orm:3.2.5.RELEASE')
   compile('org.hibernate:hibernate-ehcache:4.2.5.Final')
   compile("org.obiba.magma:magma-datasource-hibernate:${magmaVersion}")  
   compile('org.ow2.jotm:jotm-core:2.2.3') {

@@ -1,15 +1,15 @@
 rootProject.name = 'magma-simple-benchmark'
 
-include ':hibernate', ':mongodb'
+include ':commons', ':hibernate', ':mongodb'
 
 // allow us to rename sub-projects’ build files
 setBuildFileName(rootProject)
 
 def setBuildFileName(project) {
-  project.children.each { childProject ->
-    childProject.buildFileName = "${childProject.name}.gradle"
-    assert childProject.projectDir.isDirectory()
-    assert childProject.buildFile.isFile()
-    setBuildFileName(childProject)
-  }
+    project.children.each { childProject ->
+        childProject.buildFileName = "${childProject.name}.gradle"
+        assert childProject.projectDir.isDirectory()
+        assert childProject.buildFile.isFile()
+        setBuildFileName(childProject)
+    }
 }

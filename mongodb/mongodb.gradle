@@ -1,5 +1,6 @@
 description = 'Magma MongoDB Datasource Benchmark'
 
 dependencies {
-  compile("org.obiba.magma:magma-datasource-mongodb:${magmaVersion}")
+    compile project(':commons')
+    compile("org.obiba.magma:magma-datasource-mongodb:${magmaVersion}")
 }

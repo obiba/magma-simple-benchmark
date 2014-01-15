@@ -11,14 +11,25 @@
     </encoder>
   </appender>
 
+  <appender name="benchmark" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>build/benchmark.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+      <fileNamePattern>benchmark-%i.log</fileNamePattern>
+      <maxIndex>10</maxIndex>
+    </rollingPolicy>
+    <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+      <maxFileSize>10MB</maxFileSize>
+    </triggeringPolicy>
+    <encoder>
+      <pattern>%date - %logger - %message%n</pattern>
+    </encoder>
+  </appender>
+
+  <logger name="benchmark" additivity="false" level="info">
+    <appender-ref ref="benchmark"/>
+  </logger>
+
   <logger name="org.obiba.magma.benchmark" level="debug"/>
-  <logger name="org.obiba.magma.support" level="debug"/>
-  <logger name="org.obiba.magma.datasource.hibernate" level="debug"/>
-
-  <logger name="com.arjuna" level="debug"/>
-
-  <logger name="org.springframework.transaction" level="trace"/>
-  <logger name="org.springframework.orm.jpa" level="debug"/>
 
   <root level="info">
     <appender-ref ref="console"/>
