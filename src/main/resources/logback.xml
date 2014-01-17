@@ -21,7 +21,7 @@
       <maxFileSize>10MB</maxFileSize>
     </triggeringPolicy>
     <encoder>
-      <pattern>%date - %logger - %message%n</pattern>
+      <pattern>%date - %message%n</pattern>
     </encoder>
   </appender>
 

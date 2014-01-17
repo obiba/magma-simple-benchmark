@@ -29,9 +29,10 @@ public class MagmaBenchmark {
 
   private static final String ONYX_20_DATA_ZIP = "20-onyx-data.zip";
 
-//  private static final String FNAC_ZIP = "FNAC.zip";
+  private static final String FNAC_ZIP = "FNAC.zip";
 
   @Autowired
+  @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
   private Collection<DatasourceBenchmark> benchmarks;
 
   private MagmaBenchmark() {}
@@ -39,15 +40,17 @@ public class MagmaBenchmark {
   public static void main(String... args) throws Exception {
     ConfigurableApplicationContext applicationContext = new ClassPathXmlApplicationContext("/benchmark-context.xml");
     applicationContext.registerShutdownHook();
-    applicationContext.getBean(MagmaBenchmark.class).runBenchmarks();
+    applicationContext.getBean(MagmaBenchmark.class).runBenchmarks(FNAC_ZIP);
     System.exit(0);
   }
 
-  private void runBenchmarks() throws Exception {
+  private void runBenchmarks(String path) throws Exception {
+
+    benchmarkLog.info("Start benchmark with {}", path);
 
     new MagmaEngine().extend(new MagmaXStreamExtension());
 
-    Datasource fsDatasource = new FsDatasource("fs", FileUtil.getFileFromResource(ONYX_5_DATA_ZIP));
+    Datasource fsDatasource = new FsDatasource("fs", FileUtil.getFileFromResource(path));
     Initialisables.initialise(fsDatasource);
 
     for(DatasourceBenchmark benchmark : benchmarks) {
