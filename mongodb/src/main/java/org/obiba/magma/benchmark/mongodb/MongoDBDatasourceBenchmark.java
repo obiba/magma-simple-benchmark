@@ -8,6 +8,7 @@ import org.obiba.magma.ValueSet;
 import org.obiba.magma.ValueTable;
 import org.obiba.magma.Variable;
 import org.obiba.magma.VariableEntity;
+import org.obiba.magma.benchmark.AbstractDatasourceBenchmark;
 import org.obiba.magma.benchmark.DatasourceBenchmark;
 import org.obiba.magma.datasource.mongodb.MongoDBDatasourceFactory;
 import org.obiba.magma.support.DatasourceCopier;
@@ -16,24 +17,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.google.common.base.Stopwatch;
 import com.google.common.collect.Sets;
 import com.mongodb.MongoClient;
 
 import static com.google.common.collect.Iterables.size;
+import static org.obiba.magma.benchmark.BenchmarkResult.Action.IMPORT_DATA;
+import static org.obiba.magma.benchmark.BenchmarkResult.Action.READ_ENTITIES;
+import static org.obiba.magma.benchmark.BenchmarkResult.Action.READ_TABLES;
+import static org.obiba.magma.benchmark.BenchmarkResult.Action.READ_VALUES;
+import static org.obiba.magma.benchmark.BenchmarkResult.Action.READ_VALUE_SETS;
+import static org.obiba.magma.benchmark.BenchmarkResult.Action.READ_VARIABLES;
+import static org.obiba.magma.benchmark.BenchmarkResult.Action.READ_VECTORS;
 
 @Component
-public class MongoDBDatasourceBenchmark implements DatasourceBenchmark {
+public class MongoDBDatasourceBenchmark extends AbstractDatasourceBenchmark implements DatasourceBenchmark {
 
   private static final Logger benchmarkLog = LoggerFactory.getLogger("benchmark");
 
   private static final String DATASOURCE = "mongo-benchmark";
 
   private static final String DB_URL = "mongodb://localhost/" + DATASOURCE;
-
-  private final Stopwatch stopwatch = Stopwatch.createUnstarted();
-
-  private Datasource datasource;
 
   @Override
   public void setup() throws Exception {
@@ -46,6 +49,7 @@ public class MongoDBDatasourceBenchmark implements DatasourceBenchmark {
   public void copyDatasource(Datasource source) throws IOException {
     stopwatch.reset().start();
     DatasourceCopier.Builder.newCopier().build().copy(source, datasource);
+    logResult(IMPORT_DATA);
     benchmarkLog.info("Import in {}", stopwatch);
   }
 
@@ -53,6 +57,7 @@ public class MongoDBDatasourceBenchmark implements DatasourceBenchmark {
   public Set<ValueTable> getValueTables() {
     stopwatch.reset().start();
     Set<ValueTable> valueTables = datasource.getValueTables();
+    logResult(READ_TABLES);
     benchmarkLog.info("Load {} tables in {}", valueTables.size(), stopwatch);
     return valueTables;
   }
@@ -61,6 +66,7 @@ public class MongoDBDatasourceBenchmark implements DatasourceBenchmark {
   public Iterable<Variable> getVariables(ValueTable valueTable) {
     stopwatch.reset().start();
     Iterable<Variable> variables = valueTable.getVariables();
+    logResult(valueTable, READ_VARIABLES);
     benchmarkLog.info("  load {} variables in {}", size(variables), stopwatch);
     return variables;
   }
@@ -69,6 +75,7 @@ public class MongoDBDatasourceBenchmark implements DatasourceBenchmark {
   public Iterable<ValueSet> getValueSets(ValueTable valueTable) {
     stopwatch.reset().start();
     Iterable<ValueSet> valueSets = valueTable.getValueSets();
+    logResult(valueTable, READ_VALUE_SETS);
     benchmarkLog.info("  load {} valueSets in {}", size(valueSets), stopwatch);
     return valueSets;
   }
@@ -77,6 +84,7 @@ public class MongoDBDatasourceBenchmark implements DatasourceBenchmark {
   public Set<VariableEntity> getEntities(ValueTable valueTable) {
     stopwatch.reset().start();
     Set<VariableEntity> entities = valueTable.getVariableEntities();
+    logResult(valueTable, READ_ENTITIES);
     benchmarkLog.info("  load {} entities in {}", size(entities), stopwatch);
     return entities;
   }
@@ -89,6 +97,7 @@ public class MongoDBDatasourceBenchmark implements DatasourceBenchmark {
         valueTable.getValue(variable, valueSet);
       }
     }
+    logResult(valueTable, READ_VALUES);
     benchmarkLog.info("  load values in {}", stopwatch);
   }
 
@@ -99,6 +108,7 @@ public class MongoDBDatasourceBenchmark implements DatasourceBenchmark {
     for(Variable variable : variables) {
       valueTable.getVariableValueSource(variable.getName()).asVectorSource().getValues(Sets.newTreeSet(entities));
     }
+    logResult(valueTable, READ_VECTORS);
     benchmarkLog.info("  load vectors in {}", stopwatch);
   }
 

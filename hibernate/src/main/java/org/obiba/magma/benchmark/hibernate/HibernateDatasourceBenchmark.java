@@ -11,6 +11,7 @@ import org.obiba.magma.ValueSet;
 import org.obiba.magma.ValueTable;
 import org.obiba.magma.Variable;
 import org.obiba.magma.VariableEntity;
+import org.obiba.magma.benchmark.AbstractDatasourceBenchmark;
 import org.obiba.magma.benchmark.DatasourceBenchmark;
 import org.obiba.magma.datasource.hibernate.HibernateDatasource;
 import org.obiba.magma.support.DatasourceCopier;
@@ -24,14 +25,20 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import com.google.common.base.Stopwatch;
 import com.google.common.collect.Sets;
 
 import static com.google.common.collect.Iterables.size;
+import static org.obiba.magma.benchmark.BenchmarkResult.Action.IMPORT_DATA;
+import static org.obiba.magma.benchmark.BenchmarkResult.Action.READ_ENTITIES;
+import static org.obiba.magma.benchmark.BenchmarkResult.Action.READ_TABLES;
+import static org.obiba.magma.benchmark.BenchmarkResult.Action.READ_VALUES;
+import static org.obiba.magma.benchmark.BenchmarkResult.Action.READ_VALUE_SETS;
+import static org.obiba.magma.benchmark.BenchmarkResult.Action.READ_VARIABLES;
+import static org.obiba.magma.benchmark.BenchmarkResult.Action.READ_VECTORS;
 
 @Component
 @SuppressWarnings("MethodOnlyUsedFromInnerClass")
-public class HibernateDatasourceBenchmark implements DatasourceBenchmark {
+public class HibernateDatasourceBenchmark extends AbstractDatasourceBenchmark implements DatasourceBenchmark {
 
   private static final Logger log = LoggerFactory.getLogger(HibernateDatasourceBenchmark.class);
 
@@ -43,15 +50,11 @@ public class HibernateDatasourceBenchmark implements DatasourceBenchmark {
 
   private static final String FNAC_ZIP = "FNAC.zip";
 
-  private final Stopwatch stopwatch = Stopwatch.createUnstarted();
-
   @Autowired
   private TransactionTemplate transactionTemplate;
 
   @Autowired
   private SessionFactory sessionFactory;
-
-  private HibernateDatasource datasource;
 
   @Override
   public void setup() throws UnknownHostException {
@@ -78,9 +81,9 @@ public class HibernateDatasourceBenchmark implements DatasourceBenchmark {
   }
 
   private void createDatasource() {
-    transactionTemplate.execute(new TransactionCallbackRuntimeExceptions() {
+    transactionTemplate.execute(new TransactionCallbackWithoutResult() {
       @Override
-      protected void doAction(TransactionStatus status) throws Exception {
+      protected void doInTransactionWithoutResult(TransactionStatus status) {
         Initialisables.initialise(datasource = new HibernateDatasource(DATASOURCE, sessionFactory));
       }
     });
@@ -88,11 +91,16 @@ public class HibernateDatasourceBenchmark implements DatasourceBenchmark {
 
   @Override
   public void copyDatasource(final Datasource source) throws IOException {
-    transactionTemplate.execute(new TransactionCallbackRuntimeExceptions() {
+    transactionTemplate.execute(new TransactionCallbackWithoutResult() {
       @Override
-      protected void doAction(TransactionStatus status) throws Exception {
+      protected void doInTransactionWithoutResult(TransactionStatus status) {
         stopwatch.reset().start();
-        DatasourceCopier.Builder.newCopier().build().copy(source, datasource);
+        try {
+          DatasourceCopier.Builder.newCopier().build().copy(source, datasource);
+        } catch(IOException e) {
+          throw new RuntimeException(e);
+        }
+        logResult(IMPORT_DATA);
         benchmarkLog.info("Import in {}", stopwatch);
       }
     });
@@ -105,6 +113,7 @@ public class HibernateDatasourceBenchmark implements DatasourceBenchmark {
       public Set<ValueTable> doInTransaction(TransactionStatus status) {
         stopwatch.reset().start();
         Set<ValueTable> valueTables = datasource.getValueTables();
+        logResult(READ_TABLES);
         benchmarkLog.info("Load {} tables in {}", valueTables.size(), stopwatch);
         return valueTables;
       }
@@ -118,6 +127,7 @@ public class HibernateDatasourceBenchmark implements DatasourceBenchmark {
       public Iterable<Variable> doInTransaction(TransactionStatus status) {
         stopwatch.reset().start();
         Iterable<Variable> variables = valueTable.getVariables();
+        logResult(valueTable, READ_VARIABLES);
         benchmarkLog.info("  load {} variables in {}", size(variables), stopwatch);
         return variables;
       }
@@ -131,6 +141,7 @@ public class HibernateDatasourceBenchmark implements DatasourceBenchmark {
       public Iterable<ValueSet> doInTransaction(TransactionStatus status) {
         stopwatch.reset().start();
         Iterable<ValueSet> valueSets = valueTable.getValueSets();
+        logResult(valueTable, READ_VALUE_SETS);
         benchmarkLog.info("  load {} valueSets in {}", size(valueSets), stopwatch);
         return valueSets;
       }
@@ -144,6 +155,7 @@ public class HibernateDatasourceBenchmark implements DatasourceBenchmark {
       public Set<VariableEntity> doInTransaction(TransactionStatus status) {
         stopwatch.reset().start();
         Set<VariableEntity> entities = valueTable.getVariableEntities();
+        logResult(valueTable, READ_ENTITIES);
         benchmarkLog.info("  load {} entities in {}", size(entities), stopwatch);
         return entities;
       }
@@ -161,6 +173,7 @@ public class HibernateDatasourceBenchmark implements DatasourceBenchmark {
         for(Variable variable : variables) {
           valueTable.getVariableValueSource(variable.getName()).asVectorSource().getValues(Sets.newTreeSet(entities));
         }
+        logResult(valueTable, READ_VECTORS);
         benchmarkLog.info("  load vectors in {}", stopwatch);
       }
     });
@@ -178,6 +191,7 @@ public class HibernateDatasourceBenchmark implements DatasourceBenchmark {
             valueTable.getValue(variable, valueSet);
           }
         }
+        logResult(valueTable, READ_VALUES);
         benchmarkLog.info("  load values in {}", stopwatch);
       }
     });

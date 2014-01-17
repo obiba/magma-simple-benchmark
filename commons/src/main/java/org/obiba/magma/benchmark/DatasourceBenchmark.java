@@ -1,5 +1,6 @@
 package org.obiba.magma.benchmark;
 
+import java.util.List;
 import java.util.Set;
 
 import org.obiba.magma.Datasource;
@@ -25,5 +26,7 @@ public interface DatasourceBenchmark {
   void readValues(ValueTable valueTable, Iterable<Variable> variables, Iterable<ValueSet> valueSets);
 
   void readVectors(ValueTable valueTable, Iterable<Variable> variables, Iterable<VariableEntity> entities);
+
+  List<BenchmarkResult> getResults();
 
 }

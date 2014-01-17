@@ -164,8 +164,8 @@ allprojects {
 }
 
 rootProject.dependencies {
-    compile project(':commons')
-    compile project(':hibernate')
+  compile project(':commons')
+  compile project(':hibernate')
   compile project(':mongodb')
 }
 
@@ -180,11 +180,12 @@ subprojects { subProject ->
     compile("org.obiba.magma:magma-xstream:${magmaVersion}")
     compile("org.obiba.magma:magma-data-generator:${magmaVersion}")
     compile("org.obiba.magma:magma-datasource-fs:${magmaVersion}")
-      compile('org.obiba:obiba-core:1.5-SNAPSHOT')
-      compile("org.slf4j:slf4j-api:${slf4jVersion}")
-      compile('org.springframework:spring-context:3.2.5.RELEASE')
+    compile('org.obiba:obiba-core:1.5-SNAPSHOT')
+    compile("org.slf4j:slf4j-api:${slf4jVersion}")
+    compile('org.springframework:spring-context:3.2.5.RELEASE')
+    compile('joda-time:joda-time:2.3')
 
-      runtime('ch.qos.logback:logback-classic:1.0.13')
+    runtime('ch.qos.logback:logback-classic:1.0.13')
     runtime('javassist:javassist:3.12.1.GA')
     runtime("org.slf4j:slf4j-api:${slf4jVersion}")
     runtime("org.slf4j:jcl-over-slf4j:${slf4jVersion}")

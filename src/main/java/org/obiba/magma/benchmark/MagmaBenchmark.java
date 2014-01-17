@@ -40,13 +40,14 @@ public class MagmaBenchmark {
     ConfigurableApplicationContext applicationContext = new ClassPathXmlApplicationContext("/benchmark-context.xml");
     applicationContext.registerShutdownHook();
     applicationContext.getBean(MagmaBenchmark.class).runBenchmarks();
+    System.exit(0);
   }
 
   private void runBenchmarks() throws Exception {
 
     new MagmaEngine().extend(new MagmaXStreamExtension());
 
-    Datasource fsDatasource = new FsDatasource("fs", FileUtil.getFileFromResource(ONYX_20_DATA_ZIP));
+    Datasource fsDatasource = new FsDatasource("fs", FileUtil.getFileFromResource(ONYX_5_DATA_ZIP));
     Initialisables.initialise(fsDatasource);
 
     for(DatasourceBenchmark benchmark : benchmarks) {
