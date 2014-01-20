@@ -1,13 +1,14 @@
+
 = magma-simple-benchmark
 
-Simple benchmark for [Magma Datasources](https://github.com/obiba/magma)
+Simple benchmark for https://github.com/obiba/magma[Magma Datasources]
 
 Supports:
 
 * Hibernate Datasource (MySQL)
 * MongoDB Datasource
 
-To run `./gradlew run` and results in `benchmark.log`
+To run +./gradlew run+ and results in +benchmark.log+
 
 == Results
 
