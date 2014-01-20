@@ -7,6 +7,7 @@ import java.util.Set;
 import org.hibernate.SessionFactory;
 import org.obiba.magma.Datasource;
 import org.obiba.magma.MagmaEngine;
+import org.obiba.magma.Value;
 import org.obiba.magma.ValueSet;
 import org.obiba.magma.ValueTable;
 import org.obiba.magma.Variable;
@@ -162,23 +163,6 @@ public class HibernateDatasourceBenchmark extends AbstractDatasourceBenchmark im
     });
   }
 
-  @SuppressWarnings("ConstantConditions")
-  @Override
-  public void readVectors(final ValueTable valueTable, final Iterable<Variable> variables,
-      final Iterable<VariableEntity> entities) {
-    transactionTemplate.execute(new TransactionCallbackWithoutResult() {
-      @Override
-      protected void doInTransactionWithoutResult(TransactionStatus status) {
-        stopwatch.reset().start();
-        for(Variable variable : variables) {
-          valueTable.getVariableValueSource(variable.getName()).asVectorSource().getValues(Sets.newTreeSet(entities));
-        }
-        logResult(valueTable, READ_VECTORS);
-        benchmarkLog.info("  load vectors in {}", stopwatch);
-      }
-    });
-  }
-
   @Override
   public void readValues(final ValueTable valueTable, final Iterable<Variable> variables,
       final Iterable<ValueSet> valueSets) {
@@ -188,11 +172,33 @@ public class HibernateDatasourceBenchmark extends AbstractDatasourceBenchmark im
         stopwatch.reset().start();
         for(Variable variable : variables) {
           for(ValueSet valueSet : valueSets) {
-            valueTable.getValue(variable, valueSet);
+            Value value = valueTable.getValue(variable, valueSet);
+            if(!value.isNull()) value.getValue();
           }
         }
         logResult(valueTable, READ_VALUES);
         benchmarkLog.info("  load values in {}", stopwatch);
+      }
+    });
+  }
+
+  @SuppressWarnings("ConstantConditions")
+  @Override
+  public void readVectors(final ValueTable valueTable, final Iterable<Variable> variables,
+      final Iterable<VariableEntity> entities) {
+    transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+      @Override
+      protected void doInTransactionWithoutResult(TransactionStatus status) {
+        stopwatch.reset().start();
+        for(Variable variable : variables) {
+          Iterable<Value> values = valueTable.getVariableValueSource(variable.getName()).asVectorSource()
+              .getValues(Sets.newTreeSet(entities));
+          for(Value value : values) {
+            if(!value.isNull()) value.getValue();
+          }
+        }
+        logResult(valueTable, READ_VECTORS);
+        benchmarkLog.info("  load vectors in {}", stopwatch);
       }
     });
   }

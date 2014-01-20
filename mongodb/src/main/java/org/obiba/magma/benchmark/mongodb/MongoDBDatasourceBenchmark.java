@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Set;
 
 import org.obiba.magma.Datasource;
+import org.obiba.magma.Value;
 import org.obiba.magma.ValueSet;
 import org.obiba.magma.ValueTable;
 import org.obiba.magma.Variable;
@@ -94,7 +95,8 @@ public class MongoDBDatasourceBenchmark extends AbstractDatasourceBenchmark impl
     stopwatch.reset().start();
     for(Variable variable : variables) {
       for(ValueSet valueSet : valueSets) {
-        valueTable.getValue(variable, valueSet);
+        Value value = valueTable.getValue(variable, valueSet);
+        if(!value.isNull()) value.getValue();
       }
     }
     logResult(valueTable, READ_VALUES);
@@ -106,7 +108,11 @@ public class MongoDBDatasourceBenchmark extends AbstractDatasourceBenchmark impl
   public void readVectors(ValueTable valueTable, Iterable<Variable> variables, Iterable<VariableEntity> entities) {
     stopwatch.reset().start();
     for(Variable variable : variables) {
-      valueTable.getVariableValueSource(variable.getName()).asVectorSource().getValues(Sets.newTreeSet(entities));
+      Iterable<Value> values = valueTable.getVariableValueSource(variable.getName()).asVectorSource()
+          .getValues(Sets.newTreeSet(entities));
+      for(Value value : values) {
+        if(!value.isNull()) value.getValue();
+      }
     }
     logResult(valueTable, READ_VECTORS);
     benchmarkLog.info("  load vectors in {}", stopwatch);
