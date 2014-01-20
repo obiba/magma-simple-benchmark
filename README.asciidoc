@@ -1,0 +1,27 @@
+magma-simple-benchmark
+===============
+
+Simple benchmark for [Magma Datasources](https://github.com/obiba/magma)
+
+Supports:
+
+* Hibernate Datasource (MySQL)
+* MongoDB Datasource
+
+To run `./gradlew run` and results in `benchmark.log`
+
+## Results
+
+With FNAC.zip
+
+[cols="3*", options="header"]
+|===
+|Task |Hibernate |MongoDB
+|Import |3.604 min |2.466 min
+|Load 1 table |14.41 μs |19.36 μs
+|Load 222 variables |702.8 μs |91.17 ms
+|Load 3000 valueSets |82.98 μs |449.3 ms
+|Load 3000 entities |50.52 μs  |268.9 ms
+|Load values  |1.786 h |2.141 d
+|Load vectors  |184.8 ms  |156.8 ms
+|===
