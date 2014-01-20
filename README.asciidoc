@@ -1,5 +1,4 @@
-
-= magma-simple-benchmark
+== magma-simple-benchmark
 
 Simple benchmark for https://github.com/obiba/magma[Magma Datasources]
 
@@ -10,7 +9,7 @@ Supports:
 
 To run +./gradlew run+ and results in +benchmark.log+
 
-== Results
+=== Results
 
 With FNAC.zip
 
