@@ -11,7 +11,7 @@ To run +./gradlew run+ and results in +benchmark.log+
 
 === Results
 
-Benchmark using *FNAC.zip*.
+Benchmark using *FNAC.zip* with Magma commit https://github.com/obiba/magma/commit/b804638df2dddd6a4c775187170c6ffdc255ac76[#b804638df2]
 
 [cols="3*", options="header"]
 |===
@@ -21,8 +21,8 @@ Benchmark using *FNAC.zip*.
 |Load 222 variables |702.8 μs |91.17 ms
 |Load 3000 valueSets |82.98 μs |449.3 ms
 |Load 3000 entities |50.52 μs  |268.9 ms
-|Load values  |1.786 h |2.141 d
-|Load vectors  |184.8 ms  |156.8 ms
+|Load values |1.786 h |2.141 d
+|Load vectors |184.8 ms  |156.8 ms
 |===
 
 *Computer*: Intel i7-3770 CPU @3.40GHz 8 cores / 12GB RAM
