@@ -11,7 +11,7 @@ To run +./gradlew run+ and results in +benchmark.log+
 
 === Results
 
-Benchmark using *FNAC.zip* with Magma commit https://github.com/obiba/magma/commit/b804638df2dddd6a4c775187170c6ffdc255ac76[#b804638df2]
+Benchmark using *FNAC.zip* with Magma https://github.com/obiba/magma/commit/b804638df2dddd6a4c775187170c6ffdc255ac76[#b804638df2]
 
 [cols="3*", options="header"]
 |===
