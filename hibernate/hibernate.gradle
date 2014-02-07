@@ -1,10 +1,10 @@
 description = 'Magma Hibernate Datasource Benchmark'
 
 dependencies {
-    compile project(':commons')
-    compile('org.springframework:spring-orm:3.2.5.RELEASE')
+  compile project(':commons')
+  compile('org.springframework:spring-orm:3.2.5.RELEASE')
   compile('org.hibernate:hibernate-ehcache:4.2.5.Final')
-  compile("org.obiba.magma:magma-datasource-hibernate:${magmaVersion}")  
+  compile("org.obiba.magma:magma-datasource-hibernate:${magmaVersion}")
   compile('org.ow2.jotm:jotm-core:2.2.3') {
     exclude group: 'org.ow2.carol.irmi', module: 'irmi'
     exclude group: 'org.ow2.cmi', module: 'cmi-admin'
@@ -16,6 +16,6 @@ dependencies {
   compile('org.ow2.spec.ee:ow2-jta-1.1-spec:1.0.13')
   compile('commons-dbcp:commons-dbcp:1.4')
 
-  runtime('mysql:mysql-connector-java:5.1.26')
-  runtime('net.sf.ehcache:ehcache-core:2.6.6')
+  runtime('mysql:mysql-connector-java:5.1.29')
+  runtime('net.sf.ehcache:ehcache-core:2.6.8')
 }
